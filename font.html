@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WOFF2 ➜ TTF Converter</title>
+<script src="https://unpkg.com/fonteditor-core@2.1.8/dist/fonteditor-core.min.js"></script>
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#111;
+    color:#fff;
+    text-align:center;
+    padding:40px;
+}
+input{
+    margin:10px;
+    padding:8px;
+    width:300px;
+}
+button{
+    padding:10px 20px;
+    cursor:pointer;
+    margin:10px;
+}
+a{
+    display:block;
+    margin-top:10px;
+    color:#00ff99;
+}
+</style>
+</head>
+<body>
+
+<h2>WOFF2 ➜ TTF Converter</h2>
+
+<h3>Upload File</h3>
+<input type="file" id="fileInput" multiple accept=".woff2">
+<br>
+<button onclick="convertFiles()">Convert Uploaded Files</button>
+
+<hr style="margin:40px 0; border:1px solid #333;">
+
+<h3>Convert from URL</h3>
+<input type="text" id="fontUrl" placeholder="Paste WOFF2 URL here">
+<br>
+<button onclick="convertFromUrl()">Convert From URL</button>
+
+<div id="output"></div>
+
+<script>
+
+async function convertArrayBuffer(arrayBuffer, fileName) {
+    const output = document.getElementById("output");
+
+    const font = fonteditorcore.Font.create(arrayBuffer, {
+        type: "woff2"
+    });
+
+    const ttfBuffer = font.write({
+        type: "ttf"
+    });
+
+    const blob = new Blob([ttfBuffer], { type: "font/ttf" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName.replace(".woff2", ".ttf");
+    link.textContent = "Download " + link.download;
+
+    output.appendChild(link);
+}
+
+async function convertFiles() {
+    const files = document.getElementById("fileInput").files;
+    if (!files.length) {
+        alert("Select WOFF2 files first");
+        return;
+    }
+
+    for (let file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        await convertArrayBuffer(arrayBuffer, file.name);
+    }
+}
+
+async function convertFromUrl() {
+    const url = document.getElementById("fontUrl").value.trim();
+    if (!url) {
+        alert("Enter a valid URL");
+        return;
+    }
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch file");
+
+        const arrayBuffer = await response.arrayBuffer();
+        const fileName = url.split("/").pop().split("?")[0];
+
+        await convertArrayBuffer(arrayBuffer, fileName);
+
+    } catch (error) {
+        alert("Error fetching font. The server may block CORS requests.");
+    }
+}
+
+</script>
+
+</body>
+</html> 
